@@ -32,26 +32,49 @@ async function run() {
             .db("productDB")
             .collection("products");
 
-        app.get('/api/products', async (req, res) => {
-            try {
-                const page = parseInt(req.query.page);
-                const size = parseInt(req.query.size);
-                const text = req.query.search;
-                let query = {
-                    productName: { $regex: text, $options: "i" },
-                };
-                const result = await ProductCollections
-                    .find(query)
-                    .skip(page * size)
-                    .limit(size)
-                    .sort({ _id: -1 })
-                    .toArray();
-                res.send(result);
-            } catch (error) {
-                console.error('Error fetching products:', error);
-                res.status(500).json({ error: 'Failed to fetch products. Please try again later.' });
-            }
-        });
+         app.get('/api/products', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 0;
+        const size = parseInt(req.query.size) || 10;
+        const text = req.query.search || '';
+        const filterCategory = req.query.category || '';
+        const sortBy = req.query.sortBy || '';
+        const minPrice = parseInt(req.query.minPrice) || 0;
+        const maxPrice = req.query.maxPrice ? parseInt(req.query.maxPrice) : Number.MAX_VALUE;
+
+        let query = {
+            productName: { $regex: text, $options: "i" },
+            price: { $gte: minPrice, $lte: maxPrice }
+        };
+
+        if (filterCategory) {
+            query.category = filterCategory;
+        }
+
+        let sortQuery = {};
+        if (sortBy === 'High to low') {
+            sortQuery = { price: -1 };
+        } else if (sortBy === 'Low to high') {
+            sortQuery = { price: 1 };
+        }
+
+        const products = await ProductCollections.find(query)
+            .sort(sortQuery)
+            .skip(page * size)
+            .limit(size)
+            .toArray();
+
+        const count = await ProductCollections.countDocuments(query);
+
+        res.send({ products, count });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Failed to fetch products. Please try again later.' });
+    }
+});
+
+            
+            
 
 
         app.get("/api/productCounts", async (req, res) => {
