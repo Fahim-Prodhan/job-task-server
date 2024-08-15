@@ -7,6 +7,17 @@ const app = express();
 const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.djweinm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
+
+// middleware
+app.use(
+    cors({
+      origin: ["http://localhost:5173"],
+      credentials: true,
+    })
+  );
+  app.use(express.json());
+  app.use(cookieParser());
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -29,3 +40,10 @@ async function run() {
   }
 }
 run().catch(console.dir);
+
+app.get("/", async (req, res) => {
+    res.send("Testing Server");
+  });
+  app.listen(port, () => {
+    console.log("Backend is running at ", port);
+  });
