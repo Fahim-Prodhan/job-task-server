@@ -32,15 +32,16 @@ async function run() {
             .db("productDB")
             .collection("products");
 
-         app.get('/api/products', async (req, res) => {
+app.get('/api/products', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 0;
         const size = parseInt(req.query.size) || 10;
         const text = req.query.search || '';
         const filterCategory = req.query.category || '';
+        const filterBrand = req.query.brand || '';
         const sortBy = req.query.sortBy || '';
         const minPrice = parseInt(req.query.minPrice) || 0;
-        const maxPrice = req.query.maxPrice ? parseInt(req.query.maxPrice) : Number.MAX_VALUE;
+        const maxPrice = parseInt(req.query.maxPrice) || Number.MAX_SAFE_INTEGER;
 
         let query = {
             productName: { $regex: text, $options: "i" },
@@ -50,6 +51,9 @@ async function run() {
         if (filterCategory) {
             query.category = filterCategory;
         }
+        if (filterBrand) {
+            query.brand = filterBrand;
+        }
 
         let sortQuery = {};
         if (sortBy === 'High to low') {
@@ -58,23 +62,20 @@ async function run() {
             sortQuery = { price: 1 };
         }
 
+        const totalProducts = await ProductCollections.countDocuments(query);
+
         const products = await ProductCollections.find(query)
             .sort(sortQuery)
             .skip(page * size)
             .limit(size)
             .toArray();
 
-        const count = await ProductCollections.countDocuments(query);
-
-        res.send({ products, count });
+        res.send({ products, totalProducts });
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ error: 'Failed to fetch products. Please try again later.' });
     }
 });
-
-            
-            
 
 
         app.get("/api/productCounts", async (req, res) => {
