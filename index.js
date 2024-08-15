@@ -34,13 +34,35 @@ async function run() {
 
         app.get('/api/products', async (req, res) => {
             try {
-                const result = await ProductCollections.find().toArray()
-                res.send(result)
+                const page = parseInt(req.query.page);
+                const size = parseInt(req.query.size);
+                const text = req.query.search;
+                let query = {
+                    productName: { $regex: text, $options: "i" },
+                };
+                const result = await ProductCollections
+                    .find(query)
+                    .skip(page * size)
+                    .limit(size)
+                    .sort({ _id: -1 })
+                    .toArray();
+                res.send(result);
             } catch (error) {
                 console.error('Error fetching products:', error);
                 res.status(500).json({ error: 'Failed to fetch products. Please try again later.' });
             }
         });
+
+
+        app.get("/api/productCounts", async (req, res) => {
+            const text = req.query.search;
+            let query = {
+                productName: { $regex: text, $options: "i" },
+            };
+            const result = await ProductCollections.countDocuments(query);
+            res.send({ count: result });
+        });
+
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
