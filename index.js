@@ -10,7 +10,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 // middleware
 app.use(
     cors({
-        origin: ["http://localhost:5173"],
+        origin: ["http://localhost:5173","https://job-task-80016.web.app"],
         credentials: true,
     })
 );
